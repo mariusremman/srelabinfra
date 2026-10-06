@@ -88,10 +88,36 @@ Valgfrie GitHub-variabler er `NAME_PREFIX`, `AZURE_LOCATION`, `CONTAINER_PORT` (
 ```bash
 export POSTGRES_ADMIN_PASSWORD='...' NAME_PREFIX=srelab ENVIRONMENT_NAME=dev
 eval "$(./scripts/current-image.sh | tail -1)"
-az deployment sub create -n srelab-dev -l swedencentral --parameters infra/main.bicepparam
+az deployment sub create -n srelab-dev-norwayeast -l norwayeast --parameters infra/main.bicepparam
 ```
 
-## Kontrakt mot app-repoet
+## Demo-app (`app/`)
+
+Appen er skrevet i FastAPI og bruker PostgreSQL. [`.github/workflows/app.yml`](.github/workflows/app.yml) kjører når noe under `app/` endres:
+- **PR:** bygger imaget med Docker og kjører en røyktest.
+- **main:** pusher til ACR, oppdaterer container appen og venter til ny versjon svarer via Application Gateway.
+
+| Endepunkt | Hva det gjør | Hvor det synes |
+|---|---|---|
+| `GET /`, `/health`, `/ready` | Info, liveness og DB-readiness | `AppRequests` |
+| `GET/POST /api/items` | CRUD mot PostgreSQL | `AppRequests` og `AppDependencies` |
+| `/chaos/error` | Uhåndtert exception som gir 500 | `AppExceptions`, `AGWAccessLogs` |
+| `/chaos/slow?ms=3000` | Treg respons | `AppRequests` (duration) |
+| `/chaos/db-slow?seconds=5` | Treg SQL (`pg_sleep`) | `AppDependencies` |
+| `/chaos/db-exhaust?seconds=30` | Tømmer connection-poolen | Feil på `/api/items` |
+| `/chaos/cpu?seconds=10` | Bruker mye CPU | Container App-metrikker og skalering |
+| `/chaos/memory?mb=200` | Lekker minne som aldri frigis (gjenta til OOM) | `ContainerAppSystemLogs` (OOMKilled) |
+| `/chaos/crash` | Dreper prosessen | `ContainerAppSystemLogs` (restart) |
+
+Du kan simulere en dårlig release ved å sette en feilrate på `/api/items`:
+
+```bash
+az containerapp update -n ca-srelab-dev -g rg-srelab-dev --set-env-vars CHAOS_ERROR_RATE=0.3
+```
+
+`CHAOS_ENABLED=false` slår av alle `/chaos`-endepunktene.
+
+## Kontrakt mot appen
 
 Appen får disse miljøvariablene:
 
@@ -121,7 +147,7 @@ az containerapp update -n ca-srelab-dev -g rg-srelab-dev --image $ACR.azurecr.io
 
 Infra-workflowen leser imaget som kjører, og beholder det. En infra-deploy ruller derfor ikke tilbake appen.
 
-## Kostnad (omtrent, swedencentral)
+## Kostnad (omtrent, norwayeast)
 
 | Ressurs | ca. USD/mnd |
 |---|---|

@@ -24,7 +24,7 @@ concurrency:
 env:
   NAME_PREFIX: ${{ vars.NAME_PREFIX || 'srelab' }}
   ENVIRONMENT_NAME: ${{ vars.ENVIRONMENT_NAME || 'dev' }}
-  AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'swedencentral' }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'norwayeast' }}
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '8080' }}
   HEALTH_PROBE_PATH: ${{ vars.HEALTH_PROBE_PATH || '/' }}
   POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
@@ -50,7 +50,7 @@ jobs:
       - name: What-if
         run: |
           az deployment sub what-if \
-            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}" \
+            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}-${AZURE_LOCATION}" \
             --location "$AZURE_LOCATION" \
             --parameters infra/main.bicepparam
 
@@ -74,7 +74,7 @@ jobs:
       - name: Deploy
         run: |
           az deployment sub create \
-            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}" \
+            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}-${AZURE_LOCATION}" \
             --location "$AZURE_LOCATION" \
             --parameters infra/main.bicepparam \
             --query properties.outputs > outputs.json

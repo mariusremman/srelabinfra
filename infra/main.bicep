@@ -11,7 +11,7 @@ param namePrefix string = 'srelab'
 param environmentName string = 'dev'
 
 @description('Azure-region for alle ressurser.')
-param location string = 'swedencentral'
+param location string = 'norwayeast'
 
 @description('Container image for appen. Tom streng gir placeholder-image (første deploy).')
 param containerImage string = ''

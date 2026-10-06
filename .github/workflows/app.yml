@@ -1,0 +1,88 @@
+name: app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/app.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/app.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: app-${{ vars.ENVIRONMENT_NAME || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP: rg-${{ vars.NAME_PREFIX || 'srelab' }}-${{ vars.ENVIRONMENT_NAME || 'dev' }}
+  CONTAINER_APP: ca-${{ vars.NAME_PREFIX || 'srelab' }}-${{ vars.ENVIRONMENT_NAME || 'dev' }}
+  CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '8080' }}
+  IMAGE_NAME: srelab-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker build
+        run: docker build --build-arg APP_VERSION=${GITHUB_SHA::7} -t "$IMAGE_NAME:${GITHUB_SHA::7}" app
+
+      - name: Røyktest
+        run: |
+          docker run -d --name app -p 8080:8080 "$IMAGE_NAME:${GITHUB_SHA::7}"
+          for i in $(seq 1 20); do curl -fs localhost:8080/health && exit 0; sleep 1; done
+          docker logs app; exit 1
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_NAME || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build og push til ACR
+        run: |
+          ACR=$(az acr list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
+          IMAGE="$ACR.azurecr.io/$IMAGE_NAME:${GITHUB_SHA::7}"
+          az acr login --name "$ACR"
+          docker build --build-arg APP_VERSION=${GITHUB_SHA::7} -t "$IMAGE" app
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+
+      - name: Deploy til Container App
+        run: |
+          az extension add --name containerapp --upgrade --yes --only-show-errors
+          # Første deploy erstatter placeholder-imaget som lytter på port 80.
+          az containerapp ingress update -n "$CONTAINER_APP" -g "$RESOURCE_GROUP" \
+            --target-port "$CONTAINER_PORT" --only-show-errors --output none
+          az containerapp update -n "$CONTAINER_APP" -g "$RESOURCE_GROUP" \
+            --image "$IMAGE" --set-env-vars "APP_VERSION=${GITHUB_SHA::7}" \
+            --only-show-errors --output none
+
+      - name: Verifiser
+        run: |
+          FQDN=$(az network public-ip list -g "$RESOURCE_GROUP" --query "[0].dnsSettings.fqdn" -o tsv)
+          for i in $(seq 1 30); do
+            if curl -fs "http://$FQDN/" | tee /dev/stderr | grep -q "${GITHUB_SHA::7}"; then
+              echo "### Deployet \`${GITHUB_SHA::7}\` til http://$FQDN/" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Ny versjon svarer ikke via Application Gateway etter 5 minutter"; exit 1
