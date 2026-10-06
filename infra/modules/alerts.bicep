@@ -126,12 +126,14 @@ AGWAccessLogs
   }
   {
     name: 'http-latency-p95'
-    description: 'p95-latens gjennom Application Gateway over 300 ms. Baseline: ~26 ms.'
+    // 4xx ekskluderes: skannere fra internett gir trege 400-svar som ellers dominerer p95 ved lite trafikk.
+    description: 'p95-latens gjennom Application Gateway over 300 ms (ekskl. 4xx). Baseline: ~26 ms.'
     severity: 2
     query: '''
 AGWAccessLogs
+| where HttpStatus !between (400 .. 499)
 | summarize requests = count(), p95ms = percentile(TimeTaken, 95) * 1000
-| where requests >= 5 and p95ms > 300
+| where requests >= 20 and p95ms > 300
 '''
   }
   {

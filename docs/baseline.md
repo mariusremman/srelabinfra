@@ -42,6 +42,7 @@ I tillegg kommer Application Gateway sin helseprobe (`GET /`, 2 per minutt).
 |---|---|
 | 5xx i Application Gateway | **0** av 2089 requests |
 | 4xx i Application Gateway | 1 (`/favicon.ico` → 404, forventet fra nettlesere) |
+| Skanning fra internett | Normalt. Sporadiske requests mot kjente sårbarhetsstier (for eksempel `/webui_wsma_Http`, `/robots.txt`), og HTTP 400 uten URI som kan ta flere sekunder. Det er ikke et problem med appen. |
 | Feilede requests i App Insights (`Success == false`) | **0** |
 | Feilede DB-kall (`AppDependencies`, postgresql) | **0** |
 | `AppExceptions` | **0** |
@@ -158,7 +159,7 @@ Tersklene er implementert som alert-regler i [`infra/modules/alerts.bicep`](../i
 
 - **Application Insights sampler.** Hver rad i `AppRequests`, `AppDependencies` og `AppTraces` kan representere flere hendelser. Feltet `ItemCount` sier hvor mange. Tell med `sum(ItemCount)`, ikke `count()`. Under målingen representerte 1285 rader 2060 requests.
 - **`AGWAccessLogs` samples ikke.** Bruk den for eksakte tall på volum og statuskoder.
-- **Lite trafikk gir støyete persentiler.** Ved et par requests per minutt kan ett enkelt tregt kall dominere p95 og p99. Se alltid på volumet samtidig.
+- **Lite trafikk gir støyete persentiler.** Ved et par requests per minutt kan ett enkelt tregt kall dominere p95 og p99. Se alltid på volumet samtidig, og filtrer bort 4xx fra skannere før du vurderer latens.
 - **Trafikken over er syntetisk** og kommer fra én klient. Ekte trafikk vil ha mer variasjon. Mål på nytt etter større endringer.
 
 ## Mål baseline på nytt
