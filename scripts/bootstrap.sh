@@ -29,21 +29,28 @@ fi
 az ad sp show --id "$CLIENT_ID" --output none 2>/dev/null || az ad sp create --id "$CLIENT_ID" --output none
 SP_OBJECT_ID=$(az ad sp show --id "$CLIENT_ID" --query id -o tsv)
 
-echo ">> Federerte credentials (main, pull_request, environment:$ENVIRONMENT)"
+# Repoer med "immutable subject" bruker prefikset repo:<eier>@<id>/<repo>@<id>, så det hentes fra GitHub.
+SUB_PREFIX=$(gh api "repos/${REPO}/actions/oidc/customization/sub" --jq '.sub_claim_prefix // empty' 2>/dev/null || true)
+SUB_PREFIX="${SUB_PREFIX:-repo:${REPO}}"
+
+echo ">> Federerte credentials (main, pull_request, environment:$ENVIRONMENT) med prefiks $SUB_PREFIX"
 add_fic() {
   local name="$1" subject="$2"
-  if ! az ad app federated-credential list --id "$CLIENT_ID" --query "[?name=='$name']" -o tsv | grep -q .; then
-    az ad app federated-credential create --id "$CLIENT_ID" --output none --parameters "{
+  local params="{
       \"name\": \"$name\",
       \"issuer\": \"https://token.actions.githubusercontent.com\",
       \"subject\": \"$subject\",
       \"audiences\": [\"api://AzureADTokenExchange\"]
     }"
+  if az ad app federated-credential list --id "$CLIENT_ID" --query "[?name=='$name']" -o tsv | grep -q .; then
+    az ad app federated-credential update --id "$CLIENT_ID" --federated-credential-id "$name" --output none --parameters "$params"
+  else
+    az ad app federated-credential create --id "$CLIENT_ID" --output none --parameters "$params"
   fi
 }
-add_fic "main" "repo:${REPO}:ref:refs/heads/main"
-add_fic "pull-request" "repo:${REPO}:pull_request"
-add_fic "env-${ENVIRONMENT}" "repo:${REPO}:environment:${ENVIRONMENT}"
+add_fic "main" "${SUB_PREFIX}:ref:refs/heads/main"
+add_fic "pull-request" "${SUB_PREFIX}:pull_request"
+add_fic "env-${ENVIRONMENT}" "${SUB_PREFIX}:environment:${ENVIRONMENT}"
 
 echo ">> Rolletildelinger på subscription"
 SCOPE="/subscriptions/${SUBSCRIPTION_ID}"
