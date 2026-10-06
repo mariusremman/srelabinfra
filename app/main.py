@@ -136,9 +136,19 @@ def ready():
 def list_items():
     maybe_fail()
     with db() as cur:
-        cur.execute("SELECT id, name, created_at FROM items ORDER BY id DESC LIMIT 100")
+        cur.execute(
+            """
+            SELECT i.id, i.name, i.created_at,
+                   (SELECT count(*) FROM items d WHERE d.name = i.name) AS same_name
+            FROM items i
+            ORDER BY i.id DESC
+            """
+        )
         rows = cur.fetchall()
-    return [{"id": r[0], "name": r[1], "created_at": r[2].isoformat()} for r in rows]
+    return [
+        {"id": r[0], "name": r[1], "created_at": r[2].isoformat(), "same_name_count": r[3]}
+        for r in rows
+    ]
 
 
 @app.post("/api/items", status_code=201)
