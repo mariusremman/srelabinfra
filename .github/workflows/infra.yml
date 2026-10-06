@@ -27,6 +27,7 @@ env:
   AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'norwayeast' }}
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '8080' }}
   HEALTH_PROBE_PATH: ${{ vars.HEALTH_PROBE_PATH || '/' }}
+  ALERT_EMAIL_ADDRESS: ${{ vars.ALERT_EMAIL_ADDRESS }}
   POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
 
 jobs:
@@ -34,6 +35,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate alert recipient
+        run: |
+          test -n "$ALERT_EMAIL_ADDRESS" || {
+            echo "::error::Set the ALERT_EMAIL_ADDRESS GitHub variable before deploying infrastructure."
+            exit 1
+          }
 
       - uses: azure/login@v2
         with:

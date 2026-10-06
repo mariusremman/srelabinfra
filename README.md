@@ -72,6 +72,8 @@ Scriptet gjør dette:
 - setter GitHub-variablene `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` og `ENVIRONMENT_NAME`
 - genererer secreten `POSTGRES_ADMIN_PASSWORD`
 
+Før første infra-deploy må GitHub-variabelen `ALERT_EMAIL_ADDRESS` settes til mottakeren for Azure Monitor-varsler.
+
 ### 2. Deploy
 
 Push til `main`, eller kjør **Actions → infra → Run workflow**.
@@ -81,12 +83,12 @@ Push til `main`, eller kjør **Actions → infra → Run workflow**.
 
 Første deploy tar ca. 15–20 minutter. Det er Application Gateway og PostgreSQL som tar tid. Inntil app-repoet har deployet noe, kjører appen Microsofts placeholder-image. Åpne `appUrl` fra outputs for å verifisere at kjeden fungerer.
 
-Valgfrie GitHub-variabler er `NAME_PREFIX`, `AZURE_LOCATION`, `CONTAINER_PORT` (standard `8080`) og `HEALTH_PROBE_PATH` (standard `/`).
+`ALERT_EMAIL_ADDRESS` er en påkrevd GitHub-variabel. Valgfrie GitHub-variabler er `NAME_PREFIX`, `AZURE_LOCATION`, `CONTAINER_PORT` (standard `8080`) og `HEALTH_PROBE_PATH` (standard `/`).
 
 ### Lokal deploy
 
 ```bash
-export POSTGRES_ADMIN_PASSWORD='...' NAME_PREFIX=srelab ENVIRONMENT_NAME=dev
+export POSTGRES_ADMIN_PASSWORD='...' ALERT_EMAIL_ADDRESS='...' NAME_PREFIX=srelab ENVIRONMENT_NAME=dev
 eval "$(./scripts/current-image.sh | tail -1)"
 az deployment sub create -n srelab-dev-norwayeast -l norwayeast --parameters infra/main.bicepparam
 ```

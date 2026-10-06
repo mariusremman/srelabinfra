@@ -22,6 +22,9 @@ param containerPort int = 8080
 @description('Sti Application Gateway bruker til helseprobe mot appen.')
 param healthProbePath string = '/'
 
+@description('E-postmottaker for Azure Monitor-varsler.')
+param alertEmailAddress string
+
 @description('Admin-brukernavn for PostgreSQL.')
 param postgresAdminLogin string = 'pgadmin'
 
@@ -82,6 +85,18 @@ resource activityLog 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' 
         enabled: true
       }
     ]
+  }
+}
+
+module alerts 'modules/alerts.bicep' = {
+  name: 'alerts-${baseName}'
+  scope: rg
+  params: {
+    baseName: baseName
+    location: location
+    workspaceId: resources.outputs.logAnalyticsWorkspaceId
+    alertEmailAddress: alertEmailAddress
+    tags: tags
   }
 }
 
