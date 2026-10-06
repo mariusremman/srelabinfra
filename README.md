@@ -103,21 +103,6 @@ Appen er skrevet i FastAPI og bruker PostgreSQL. [`.github/workflows/app.yml`](.
 |---|---|---|
 | `GET /`, `/health`, `/ready` | Info, liveness og DB-readiness | `AppRequests` |
 | `GET/POST /api/items` | CRUD mot PostgreSQL | `AppRequests` og `AppDependencies` |
-| `/chaos/error` | Uhåndtert exception som gir 500 | `AppExceptions`, `AGWAccessLogs` |
-| `/chaos/slow?ms=3000` | Treg respons | `AppRequests` (duration) |
-| `/chaos/db-slow?seconds=5` | Treg SQL (`pg_sleep`) | `AppDependencies` |
-| `/chaos/db-exhaust?seconds=30` | Tømmer connection-poolen | Feil på `/api/items` |
-| `/chaos/cpu?seconds=10` | Bruker mye CPU | Container App-metrikker og skalering |
-| `/chaos/memory?mb=200` | Lekker minne som aldri frigis (gjenta til OOM) | `ContainerAppSystemLogs` (OOMKilled) |
-| `/chaos/crash` | Dreper prosessen | `ContainerAppSystemLogs` (restart) |
-
-Du kan simulere en dårlig release ved å sette en feilrate på `/api/items`:
-
-```bash
-az containerapp update -n ca-srelab-dev -g rg-srelab-dev --set-env-vars CHAOS_ERROR_RATE=0.3
-```
-
-`CHAOS_ENABLED=false` slår av alle `/chaos`-endepunktene.
 
 ## Kontrakt mot appen
 
