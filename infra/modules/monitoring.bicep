@@ -3,10 +3,12 @@
 param baseName string
 param location string
 param tags object
+@description('Unikt suffiks. Log Analytics soft-deleter workspaces i 14 dager, så navnet må ikke kollidere med et slettet workspace.')
+param suffix string
 param retentionInDays int = 30
 
 resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: 'log-${baseName}'
+  name: 'log-${baseName}-${suffix}'
   location: location
   tags: tags
   properties: {

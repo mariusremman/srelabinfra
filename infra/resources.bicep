@@ -20,6 +20,7 @@ module monitoring 'modules/monitoring.bicep' = {
   name: 'monitoring'
   params: {
     baseName: baseName
+    suffix: suffix
     location: location
     tags: tags
   }

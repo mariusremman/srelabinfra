@@ -21,7 +21,7 @@ flowchart LR
 | Ressurs | Navn (dev) | Kommentar |
 |---|---|---|
 | Resource group | `rg-srelab-dev` | |
-| Log Analytics | `log-srelab-dev` | Alle logger og metrikker havner her |
+| Log Analytics | `log-srelab-dev-<suffix>` | Alle logger og metrikker havner her |
 | Application Insights | `appi-srelab-dev` | Workspace-basert, for applikasjonstelemetri |
 | VNet og NSG-er | `vnet-srelab-dev` | Subnett for AppGW, ACA (/23) og DB |
 | Application Gateway | `agw-srelab-dev` | Standard_v2 med autoscale 0–2 og offentlig IP med DNS-navn |
@@ -169,7 +169,7 @@ az keyvault purge -n kv-srelab-dev-<suffix>    # soft delete holder navnet i 7 d
 
 ## Videre (SRE Agent og Azure Monitor)
 
-- Koble Azure SRE Agent til `rg-srelab-dev`. Alle signaler ligger i `log-srelab-dev`.
+- Koble Azure SRE Agent til `rg-srelab-dev`. Alle signaler ligger i `log-srelab-dev-<suffix>`.
 - Legg til action group og alert-regler, for eksempel 5xx i `AGWAccessLogs`, unhealthy backend, restarter i Container App og CPU/storage på PostgreSQL.
 - Lag en workbook eller dashboard for app og infra.
 - Vurder HTTPS på Application Gateway (sertifikat fra Key Vault) og WAF_v2.
