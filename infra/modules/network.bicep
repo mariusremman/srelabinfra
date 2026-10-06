@@ -84,6 +84,15 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
           networkSecurityGroup: {
             id: nsgAppGw.id
           }
+          // Nye v2-gatewayer deployes med network isolation, som krever delegert subnett.
+          delegations: [
+            {
+              name: 'appgw'
+              properties: {
+                serviceName: 'Microsoft.Network/applicationGateways'
+              }
+            }
+          ]
         }
       }
       {
