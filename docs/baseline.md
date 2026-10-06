@@ -1,6 +1,6 @@
 # Baseline: srelab-dev
 
-Dette dokumentet beskriver hvordan systemet ser ut **når alt er normalt**. Bruk det til å vurdere om en observasjon er et avvik, og hvor stort avviket er.
+Dette dokumentet beskriver hvordan systemet ser ut **når alt er normalt**. Hvordan endringer gjøres, står i [operations.md](operations.md). Bruk det til å vurdere om en observasjon er et avvik, og hvor stort avviket er.
 
 - **Målt:** 2026-10-06, 12:53–13:02 UTC (9 minutter med jevn trafikk) og 12:30–12:50 UTC (tomgang)
 - **Versjon:** app-image `e4723c5`, infrastruktur fra `main` samme dag
