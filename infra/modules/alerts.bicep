@@ -126,12 +126,13 @@ AGWAccessLogs
   }
   {
     name: 'http-latency-p95'
-    // 4xx ekskluderes: skannere fra internett gir trege 400-svar som ellers dominerer p95 ved lite trafikk.
-    description: 'p95-latens gjennom Application Gateway over 300 ms (ekskl. 4xx). Baseline: ~26 ms.'
+    // Bare requests som er rutet til backend. Skannere fra internett gir trege 400-svar som
+    // gatewayen avviser selv, og som ellers dominerer p95 ved lite trafikk.
+    description: 'p95-latens for requests rutet gjennom Application Gateway til appen over 300 ms. Baseline: ~26 ms.'
     severity: 2
     query: '''
 AGWAccessLogs
-| where HttpStatus !between (400 .. 499)
+| where isnotempty(BackendPoolName) and isnotempty(BackendSettingName)
 | summarize requests = count(), p95ms = percentile(TimeTaken, 95) * 1000
 | where requests >= 20 and p95ms > 300
 '''

@@ -159,7 +159,7 @@ Tersklene er implementert som alert-regler i [`infra/modules/alerts.bicep`](../i
 
 - **Application Insights sampler.** Hver rad i `AppRequests`, `AppDependencies` og `AppTraces` kan representere flere hendelser. Feltet `ItemCount` sier hvor mange. Tell med `sum(ItemCount)`, ikke `count()`. Under målingen representerte 1285 rader 2060 requests.
 - **`AGWAccessLogs` samples ikke.** Bruk den for eksakte tall på volum og statuskoder.
-- **Lite trafikk gir støyete persentiler.** Ved et par requests per minutt kan ett enkelt tregt kall dominere p95 og p99. Se alltid på volumet samtidig, og filtrer bort 4xx fra skannere før du vurderer latens.
+- **Lite trafikk gir støyete persentiler.** Ved et par requests per minutt kan ett enkelt tregt kall dominere p95 og p99. Se alltid på volumet samtidig, og se bare på requests som er rutet til appen (`isnotempty(BackendPoolName)`) før du vurderer latens.
 - **Trafikken over er syntetisk** og kommer fra én klient. Ekte trafikk vil ha mer variasjon. Mål på nytt etter større endringer.
 
 ## Mål baseline på nytt
