@@ -1,0 +1,4 @@
+infra/**/*.json
+!infra/bicepconfig.json
+outputs.json
+.DS_Store

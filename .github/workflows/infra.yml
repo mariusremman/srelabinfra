@@ -1,0 +1,90 @@
+name: infra
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC-innlogging mot Azure
+  contents: read
+
+concurrency:
+  group: infra-${{ vars.ENVIRONMENT_NAME || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  NAME_PREFIX: ${{ vars.NAME_PREFIX || 'srelab' }}
+  ENVIRONMENT_NAME: ${{ vars.ENVIRONMENT_NAME || 'dev' }}
+  AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'swedencentral' }}
+  CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '8080' }}
+  HEALTH_PROBE_PATH: ${{ vars.HEALTH_PROBE_PATH || '/' }}
+  POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bicep build/lint
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+      - name: Behold image som app-repoet har deployet
+        run: ./scripts/current-image.sh
+
+      - name: What-if
+        run: |
+          az deployment sub what-if \
+            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}" \
+            --location "$AZURE_LOCATION" \
+            --parameters infra/main.bicepparam
+
+  deploy:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: ${{ vars.ENVIRONMENT_NAME || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Behold image som app-repoet har deployet
+        run: ./scripts/current-image.sh
+
+      - name: Deploy
+        run: |
+          az deployment sub create \
+            --name "${NAME_PREFIX}-${ENVIRONMENT_NAME}" \
+            --location "$AZURE_LOCATION" \
+            --parameters infra/main.bicepparam \
+            --query properties.outputs > outputs.json
+
+      - name: Oppsummering
+        run: |
+          {
+            echo "## Deployment outputs"
+            echo ""
+            echo "| Output | Verdi |"
+            echo "|---|---|"
+            jq -r 'to_entries[] | "| \(.key) | `\(.value.value)` |"' outputs.json
+          } >> "$GITHUB_STEP_SUMMARY"
