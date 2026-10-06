@@ -193,5 +193,6 @@ resource agwDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   }
 }
 
+output id string = agw.id
 output publicIpAddress string = pip.properties.ipAddress
 output fqdn string = pip.properties.dnsSettings.fqdn

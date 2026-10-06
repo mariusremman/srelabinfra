@@ -120,7 +120,7 @@ PostgreSQL har en del faste kostnader som ikke kommer fra appen:
 | Tabell | Normalt innhold |
 |---|---|
 | `ContainerAppConsoleLogs` | Én `INFO`-linje per opprettet item, oppstartslinjer ved ny revisjon. Ingen `ERROR`/`CRITICAL`. |
-| `ContainerAppSystemLogs` | Hendelser ved deploy og ny revisjon. Ellers stille. Ingen `BackOff`, `ProbeFailed`, `OOMKilled` eller `ContainerTerminated` utenom deploy. |
+| `ContainerAppSystemLogs` | Hendelser ved deploy og ny revisjon, ellers stille. **Normalt ved deploy:** `ProbeFailed` («Probe of StartUp failed») mens ny container starter, og `ContainerTerminated` med reason `ManuallyStopped` når gammel revisjon stoppes. Utenom deploy: ingen `BackOff`, `ProbeFailed`, `OOMKilled` eller `ContainerTerminated`. |
 | `AppTraces` | Samme applogger som konsollen, via OpenTelemetry |
 | `AzureActivity` | Skriveoperasjoner fra GitHub Actions ved deploy av infra eller app |
 
@@ -151,6 +151,8 @@ Baseline (0 % feil, p95 26 ms) ligger godt innenfor. Det gir rom for normal vari
 | Postgres `active_connections` | 9–11 | > 20 | > 40 |
 | Postgres `cpu_credits_remaining` | ~40, stigende | synkende trend | < 10 |
 | Postgres `storage_percent` | 13 % | > 70 % | > 85 % |
+
+Tersklene er implementert som alert-regler i [`infra/modules/alerts.bicep`](../infra/modules/alerts.bicep).
 
 ## Viktig ved tolking av data
 

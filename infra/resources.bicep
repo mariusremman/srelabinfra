@@ -11,6 +11,7 @@ param postgresAdminLogin string
 @secure()
 param postgresAdminPassword string
 param databaseName string
+param alertEmail string
 
 // Kort, deterministisk suffiks for ressurser som krever globalt unike navn.
 var suffix = take(uniqueString(resourceGroup().id), 6)
@@ -113,6 +114,20 @@ module appGateway 'modules/appgateway.bicep' = {
     backendFqdn: containerApps.outputs.appFqdn
     healthProbePath: healthProbePath
     dnsLabel: '${baseName}-${suffix}'
+  }
+}
+
+module alerts 'modules/alerts.bicep' = {
+  name: 'alerts'
+  params: {
+    baseName: baseName
+    location: location
+    tags: tags
+    workspaceId: monitoring.outputs.workspaceId
+    appGatewayId: appGateway.outputs.id
+    containerAppId: containerApps.outputs.appId
+    postgresId: postgres.outputs.id
+    alertEmail: alertEmail
   }
 }
 

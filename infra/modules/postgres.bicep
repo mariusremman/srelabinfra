@@ -98,5 +98,6 @@ resource serverDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' =
   }
 }
 
+output id string = server.id
 output name string = server.name
 output fqdn string = server.properties.fullyQualifiedDomainName

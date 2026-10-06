@@ -175,5 +175,6 @@ resource appDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
 }
 
 output environmentName string = env.name
+output appId string = app.id
 output appName string = app.name
 output appFqdn string = app.properties.configuration.ingress.fqdn

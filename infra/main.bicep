@@ -32,6 +32,9 @@ param postgresAdminPassword string
 @description('Navn på applikasjonsdatabasen.')
 param databaseName string = 'appdb'
 
+@description('E-post som får alert-varsler. Tom streng = ingen e-post.')
+param alertEmail string = ''
+
 param tags object = {
   project: 'srelab'
   environment: environmentName
@@ -59,6 +62,7 @@ module resources 'resources.bicep' = {
     postgresAdminLogin: postgresAdminLogin
     postgresAdminPassword: postgresAdminPassword
     databaseName: databaseName
+    alertEmail: alertEmail
   }
 }
 
