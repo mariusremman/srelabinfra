@@ -138,9 +138,21 @@ def list_items():
     with db() as cur:
         cur.execute(
             """
-            SELECT i.id, i.name, i.created_at,
-                   (SELECT count(*) FROM items d WHERE d.name = i.name) AS same_name
-            FROM items i
+            WITH recent_items AS (
+                SELECT id, name, created_at
+                FROM items
+                ORDER BY id DESC
+                LIMIT 100
+            ),
+            name_counts AS (
+                SELECT name, count(*) AS same_name
+                FROM items
+                WHERE name IN (SELECT DISTINCT name FROM recent_items)
+                GROUP BY name
+            )
+            SELECT i.id, i.name, i.created_at, c.same_name
+            FROM recent_items i
+            JOIN name_counts c ON c.name = i.name
             ORDER BY i.id DESC
             """
         )
