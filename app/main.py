@@ -28,6 +28,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 log = logging.getLogger("srelab")
+# Telemetri-eksporten logger hver HTTP-forespørsel på INFO, som ellers drukner applogene.
+logging.getLogger("azure").setLevel(logging.WARNING)
 
 APP_VERSION = os.getenv("APP_VERSION", "local")
 CHAOS_ENABLED = os.getenv("CHAOS_ENABLED", "true").lower() == "true"

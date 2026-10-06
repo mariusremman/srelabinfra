@@ -2,6 +2,8 @@
 
 Infrastruktur (Bicep og GitHub Actions) for en enkel demo-app på Azure Container Apps. Appen utvikles i et eget repo. Dette repoet gir plattformen den kjører på, med full logging til Log Analytics, slik at Azure SRE Agent og Azure Monitor kan kobles på senere.
 
+Driftsdokumentasjon: [docs/baseline.md](docs/baseline.md) beskriver normaltilstand, SLO-er og terskler for avvik.
+
 ## Arkitektur
 
 ```mermaid
