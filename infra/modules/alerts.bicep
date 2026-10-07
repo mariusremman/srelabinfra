@@ -134,8 +134,7 @@ var logAlerts = [
     query: '''
 AGWAccessLogs
 | where Host in ('${appGatewayFqdn}', '${containerAppFqdn}')
-| where HttpStatus >= 500 or (HttpStatus == 499 and TimeTaken >= 1)
-| summarize requests = count(), errors = countif(HttpStatus >= 500 or HttpStatus == 499)
+| summarize requests = count(), errors = countif(HttpStatus >= 500 or (HttpStatus == 499 and TimeTaken >= 1))
 | extend errorPct = 100.0 * errors / requests
 | where requests >= 5 and errorPct > 2
 '''
