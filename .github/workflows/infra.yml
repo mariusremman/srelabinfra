@@ -26,7 +26,7 @@ env:
   ENVIRONMENT_NAME: ${{ vars.ENVIRONMENT_NAME || 'dev' }}
   AZURE_LOCATION: ${{ vars.AZURE_LOCATION || 'norwayeast' }}
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '8080' }}
-  HEALTH_PROBE_PATH: ${{ vars.HEALTH_PROBE_PATH || '/healthz' }}
+  HEALTH_PROBE_PATH: ${{ vars.HEALTH_PROBE_PATH || '/' }}
   ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
   POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
 
