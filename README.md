@@ -67,7 +67,8 @@ Alvorlighet skiller symptom fra årsak. Sev1 og Sev2 er det brukerne merker, og 
 
 | Alert | Kilde | Sev |
 |---|---|---|
-| `http-5xx-rate`: over 2 % 5xx | `AGWAccessLogs` | 1 |
+| `http-5xx-rate`: over 2 % feil (5xx, eller 499 når klienten gir opp) | `AGWAccessLogs` | 1 |
+| `availability-ready`: `/ready` feiler fra minst 2 av 3 regioner | Tilgjengelighetstest i Application Insights | 1 |
 | `agw-unhealthy-backend` | AppGW `UnhealthyHostCount` | 3 |
 | `http-latency-p95`: over 300 ms | `AGWAccessLogs` | 2 |
 | `app-exceptions` | `AppExceptions` | 3 |
@@ -78,6 +79,9 @@ Alvorlighet skiller symptom fra årsak. Sev1 og Sev2 er det brukerne merker, og 
 | `db-low-cpu-credits`: under 10 | PG `cpu_credits_remaining` | 3 |
 | `app-high-memory`: over 300 MB | ACA `WorkingSetBytes` | 3 |
 | `db-high-connections`: over 20 | PG `active_connections` | 3 |
+| `db-stopped`: PostgreSQL er stoppet | Activity Log | – |
+
+Activity Log-alerts har ingen alvorlighetsgrad. `db-stopped` starter derfor ingen undersøkelse, men gir e-post og er kontekst for agenten.
 
 ## Kom i gang
 

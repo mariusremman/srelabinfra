@@ -12,6 +12,9 @@ param workspaceId string
 param appGatewayId string
 param containerAppId string
 param postgresId string
+param appInsightsId string
+@description('URL som tilgjengelighetstesten kaller. Bør sjekke databasen, slik /ready gjør.')
+param availabilityUrl string
 @description('E-post for varsling. Tom streng = ingen e-post (alerts fyrer likevel).')
 param alertEmail string = ''
 
@@ -120,11 +123,12 @@ var metricAlerts = [
 var logAlerts = [
   {
     name: 'http-5xx-rate'
-    description: 'Over 2 % av requests gjennom Application Gateway gir 5xx. Baseline: 0 %.'
+    // 499 (klienten ga opp) telles som feil: en avhengighet som henger gir ofte timeouts, ikke 5xx.
+    description: 'Over 2 % av requests gjennom Application Gateway feiler (5xx, eller 499 fordi klienten ga opp). Baseline: 0 %.'
     severity: 1
     query: '''
 AGWAccessLogs
-| summarize requests = count(), errors = countif(HttpStatus >= 500)
+| summarize requests = count(), errors = countif(HttpStatus >= 500 or HttpStatus == 499)
 | extend errorPct = 100.0 * errors / requests
 | where requests >= 5 and errorPct > 2
 '''
@@ -252,5 +256,98 @@ resource logAlertRules 'Microsoft.Insights/scheduledQueryRules@2023-12-01' = [
     }
   }
 ]
+
+// Tilgjengelighet utenfra: kaller /ready (som sjekker databasen) fra tre regioner hvert 5. minutt.
+// Fanger brudd også når det ikke kommer noen trafikk, og når requests henger i stedet for å feile.
+var webTestName = 'webtest-${baseName}-ready'
+
+resource availabilityTest 'Microsoft.Insights/webtests@2022-06-15' = {
+  name: webTestName
+  location: location
+  // Koblingen til Application Insights kreves for at testen skal vises og rapportere dit.
+  tags: union(tags, { 'hidden-link:${appInsightsId}': 'Resource' })
+  kind: 'standard'
+  properties: {
+    SyntheticMonitorId: webTestName
+    Name: '${baseName} /ready'
+    Description: 'Sjekker at appen og databasen svarer via Application Gateway.'
+    Enabled: true
+    Frequency: 300
+    Timeout: 30
+    Kind: 'standard'
+    RetryEnabled: true
+    Locations: [
+      { Id: 'emea-nl-ams-azr' }
+      { Id: 'emea-gb-db3-azr' }
+      { Id: 'emea-ru-msa-edge' }
+    ]
+    Request: {
+      RequestUrl: availabilityUrl
+      HttpVerb: 'GET'
+      ParseDependentRequests: false
+    }
+    ValidationRules: {
+      ExpectedHttpStatusCode: 200
+      SSLCheck: false
+    }
+  }
+}
+
+resource availabilityAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-${baseName}-availability-ready'
+  location: 'global'
+  tags: tags
+  properties: {
+    description: 'Tilgjengelighetstesten mot /ready feiler fra minst to av tre regioner. Tjenesten er nede for brukerne. Baseline: 100 % tilgjengelig.'
+    severity: 1
+    enabled: true
+    scopes: [
+      availabilityTest.id
+      appInsightsId
+    ]
+    evaluationFrequency: 'PT1M'
+    windowSize: 'PT5M'
+    autoMitigate: true
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria'
+      webTestId: availabilityTest.id
+      componentId: appInsightsId
+      failedLocationCount: 2
+    }
+    actions: [
+      {
+        actionGroupId: actionGroup.id
+      }
+    ]
+  }
+}
+
+// Activity Log-alert når databasen stoppes. Activity Log-alerts har ingen alvorlighetsgrad og
+// starter derfor ingen undersøkelse i SRE Agent, men gir årsaken som kontekst og sender e-post.
+resource postgresStoppedAlert 'Microsoft.Insights/activityLogAlerts@2020-10-01' = {
+  name: 'alert-${baseName}-db-stopped'
+  location: 'Global'
+  tags: tags
+  properties: {
+    description: 'PostgreSQL-serveren er stoppet. Alle databasekall vil feile til den startes igjen.'
+    enabled: true
+    scopes: [
+      resourceGroup().id
+    ]
+    condition: {
+      allOf: [
+        { field: 'category', equals: 'Administrative' }
+        { field: 'resourceId', equals: postgresId }
+        { field: 'operationName', equals: 'Microsoft.DBforPostgreSQL/flexibleServers/stop/action' }
+        { field: 'status', equals: 'Succeeded' }
+      ]
+    }
+    actions: {
+      actionGroups: [
+        { actionGroupId: actionGroup.id }
+      ]
+    }
+  }
+}
 
 output actionGroupId string = actionGroup.id
