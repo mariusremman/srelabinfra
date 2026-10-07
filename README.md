@@ -103,7 +103,7 @@ Push til `main`, eller kjør **Actions → infra → Run workflow**.
 
 Første deploy tar ca. 15–20 minutter. Det er Application Gateway og PostgreSQL som tar tid. Inntil app-repoet har deployet noe, kjører appen Microsofts placeholder-image. Åpne `appUrl` fra outputs for å verifisere at kjeden fungerer.
 
-Valgfrie GitHub-variabler er `NAME_PREFIX`, `AZURE_LOCATION`, `CONTAINER_PORT` (standard `8080`) og `HEALTH_PROBE_PATH` (standard `/`).
+Valgfrie GitHub-variabler er `NAME_PREFIX`, `AZURE_LOCATION`, `CONTAINER_PORT` (standard `8080`) og `HEALTH_PROBE_PATH` (standard `/healthz`).
 
 ### Lokal deploy
 
@@ -139,7 +139,7 @@ Appen får disse miljøvariablene:
 
 Krav til appen:
 - Den lytter på `PORT` (8080).
-- Den svarer med 2xx/3xx på `HEALTH_PROBE_PATH`. Lag gjerne `/health` og sett variabelen.
+- Den svarer med 2xx/3xx på `HEALTH_PROBE_PATH`; standarden er `/healthz`.
 - Den logger til stdout. Da havner loggene i `ContainerAppConsoleLogs`.
 - Den bruker [Azure Monitor OpenTelemetry Distro](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable) for requests, dependencies og traces.
 
