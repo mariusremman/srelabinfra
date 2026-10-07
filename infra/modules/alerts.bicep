@@ -13,6 +13,10 @@ param appGatewayId string
 param containerAppId string
 param postgresId string
 param appInsightsId string
+@description('Offentlig FQDN for Application Gateway. Bare denne og Container App-FQDN-en regnes som støttet trafikk i gateway-alerten.')
+param appGatewayFqdn string
+@description('Container App-FQDN brukt av tilgjengelighetstesten gjennom Application Gateway.')
+param containerAppFqdn string
 @description('URL som tilgjengelighetstesten kaller. Bør sjekke databasen, slik /ready gjør.')
 param availabilityUrl string
 @description('E-post for varsling. Tom streng = ingen e-post (alerts fyrer likevel).')
@@ -123,11 +127,14 @@ var metricAlerts = [
 var logAlerts = [
   {
     name: 'http-5xx-rate'
-    // 499 (klienten ga opp) telles som feil: en avhengighet som henger gir ofte timeouts, ikke 5xx.
-    description: 'Over 2 % av requests gjennom Application Gateway feiler (5xx, eller 499 fordi klienten ga opp). Baseline: 0 %.'
+    // Skannere sender ofte ufullstendige forespørsler eller lukker umiddelbart. Behold 499 som varer minst ett sekund,
+    // slik at ekte timeout-mønstre fra en treg avhengighet fortsatt varsles.
+    description: 'Over 2 % av støttet trafikk gjennom Application Gateway feiler (5xx, eller 499 etter minst ett sekund). Baseline: 0 %.'
     severity: 1
     query: '''
 AGWAccessLogs
+| where Host in ('${appGatewayFqdn}', '${containerAppFqdn}')
+| where HttpStatus >= 500 or (HttpStatus == 499 and TimeTaken >= 1)
 | summarize requests = count(), errors = countif(HttpStatus >= 500 or HttpStatus == 499)
 | extend errorPct = 100.0 * errors / requests
 | where requests >= 5 and errorPct > 2
