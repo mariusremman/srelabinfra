@@ -165,14 +165,10 @@ def list_items():
 
 def ensure_name_available(name: str) -> None:
     """Rask oppslag på navn før insert."""
-    if pool is None:
-        raise HTTPException(503, "Database er ikke konfigurert")
-    conn = pool.getconn()
-    with conn.cursor() as cur:
+    with db() as cur:
         cur.execute("SELECT 1 FROM items WHERE name = %s LIMIT 1", (name,))
         if cur.fetchone():
             raise HTTPException(409, f"Navnet {name!r} er allerede i bruk")
-    pool.putconn(conn)
 
 
 @app.post("/api/items", status_code=201)
