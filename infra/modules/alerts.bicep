@@ -1,5 +1,10 @@
 // Alert-regler basert på tersklene i docs/baseline.md. Alerts i resource groupen plukkes
 // opp av Azure SRE Agent (incident platform: Azure Monitor). Action groupen sender e-post.
+//
+// Alvorlighet skiller symptom fra årsak, slik at én hendelse gir én undersøkelse:
+// - Sev1/Sev2: det brukerne merker (5xx, latens). Disse starter en undersøkelse i SRE Agent.
+// - Sev3: årsaker og tidlige varsler. De gir e-post og er kontekst for undersøkelsen,
+//   men starter ingen egen undersøkelse (response planen dekker Sev0-2).
 param baseName string
 param location string
 param tags object
@@ -33,7 +38,7 @@ var metricAlerts = [
   {
     name: 'agw-unhealthy-backend'
     description: 'Application Gateway rapporterer usunn backend (container appen). Baseline: UnhealthyHostCount = 0.'
-    severity: 1
+    severity: 3
     scope: appGatewayId
     namespace: 'Microsoft.Network/applicationGateways'
     metric: 'UnhealthyHostCount'
@@ -46,7 +51,7 @@ var metricAlerts = [
   {
     name: 'app-high-cpu'
     description: 'Container appen bruker over 80 % av CPU-grensen. Baseline: 3-4 % under normal trafikk.'
-    severity: 2
+    severity: 3
     scope: containerAppId
     namespace: 'Microsoft.App/containerApps'
     metric: 'CpuPercentage'
@@ -72,7 +77,7 @@ var metricAlerts = [
   {
     name: 'db-high-cpu'
     description: 'PostgreSQL CPU over 80 %. Baseline: ~8 %.'
-    severity: 2
+    severity: 3
     scope: postgresId
     namespace: 'Microsoft.DBforPostgreSQL/flexibleServers'
     metric: 'cpu_percent'
@@ -85,7 +90,7 @@ var metricAlerts = [
   {
     name: 'db-low-cpu-credits'
     description: 'PostgreSQL (Burstable B1ms) har under 10 CPU-kreditter igjen og vil snart strupes. Baseline: ~40 og stigende.'
-    severity: 2
+    severity: 3
     scope: postgresId
     namespace: 'Microsoft.DBforPostgreSQL/flexibleServers'
     metric: 'cpu_credits_remaining'
@@ -140,7 +145,7 @@ AGWAccessLogs
   {
     name: 'app-exceptions'
     description: 'Appen kaster uhåndterte exceptions. Baseline: 0.'
-    severity: 2
+    severity: 3
     query: '''
 AppExceptions
 | summarize exceptions = sum(ItemCount)
@@ -150,7 +155,7 @@ AppExceptions
   {
     name: 'db-dependency-degraded'
     description: 'Databasekall feiler eller har p95 over 200 ms. Baseline: 0 feil, p95 ~6 ms.'
-    severity: 2
+    severity: 3
     query: '''
 AppDependencies
 | where DependencyType == "postgresql"
@@ -161,7 +166,7 @@ AppDependencies
   {
     name: 'app-container-restart'
     description: 'Containeren er terminert, krasjer eller er OOMKilled utenom en vanlig deploy. Baseline: ingen.'
-    severity: 2
+    severity: 3
     query: '''
 ContainerAppSystemLogs
 | where Reason in ("ContainerTerminated", "BackOff") or Log has "OOMKilled"

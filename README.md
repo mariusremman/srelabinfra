@@ -63,17 +63,19 @@ ContainerAppSystemLogs | where Reason in ("BackOff", "ProbeFailed", "ContainerTe
 
 [`infra/modules/alerts.bicep`](infra/modules/alerts.bicep) har alert-regler basert på tersklene i [docs/baseline.md](docs/baseline.md). Alerts i resource groupen går til Azure SRE Agent via incident platform *Azure Monitor*. I tillegg sendes e-post til adressen i GitHub-variabelen `ALERT_EMAIL`, via action group `ag-srelab-dev`.
 
+Alvorlighet skiller symptom fra årsak. Sev1 og Sev2 er det brukerne merker, og de starter en undersøkelse i SRE Agent (response planen dekker Sev0–2). Sev3 er årsaker og tidlige varsler: de gir e-post og er kontekst for undersøkelsen, men starter ingen egen. Da gir én hendelse én undersøkelse.
+
 | Alert | Kilde | Sev |
 |---|---|---|
 | `http-5xx-rate`: over 2 % 5xx | `AGWAccessLogs` | 1 |
-| `agw-unhealthy-backend` | AppGW `UnhealthyHostCount` | 1 |
+| `agw-unhealthy-backend` | AppGW `UnhealthyHostCount` | 3 |
 | `http-latency-p95`: over 300 ms | `AGWAccessLogs` | 2 |
-| `app-exceptions` | `AppExceptions` | 2 |
-| `db-dependency-degraded`: feil eller p95 over 200 ms | `AppDependencies` | 2 |
-| `app-container-restart`: krasj eller OOM, ikke deploy | `ContainerAppSystemLogs` | 2 |
-| `app-high-cpu`: over 80 % | ACA `CpuPercentage` | 2 |
-| `db-high-cpu`: over 80 % | PG `cpu_percent` | 2 |
-| `db-low-cpu-credits`: under 10 | PG `cpu_credits_remaining` | 2 |
+| `app-exceptions` | `AppExceptions` | 3 |
+| `db-dependency-degraded`: feil eller p95 over 200 ms | `AppDependencies` | 3 |
+| `app-container-restart`: krasj eller OOM, ikke deploy | `ContainerAppSystemLogs` | 3 |
+| `app-high-cpu`: over 80 % | ACA `CpuPercentage` | 3 |
+| `db-high-cpu`: over 80 % | PG `cpu_percent` | 3 |
+| `db-low-cpu-credits`: under 10 | PG `cpu_credits_remaining` | 3 |
 | `app-high-memory`: over 300 MB | ACA `WorkingSetBytes` | 3 |
 | `db-high-connections`: over 20 | PG `active_connections` | 3 |
 

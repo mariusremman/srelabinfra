@@ -44,6 +44,8 @@ Hvis en hendelse krever en endring raskere enn en PR kan gi, kan **bare et menne
 
 - **Ikke endre Azure-ressurser direkte.** Skriveverktøy for Azure CLI og kubectl er sperret med en global policy på agenten. Foreslå tiltak som PR i stedet.
 - **Jobb alltid på siste `main`.** Kjør `git fetch origin` før du leser kode eller lager en branch, og bygg all endring på `origin/main`. En lokal kopi av repoet kan være utdatert.
+- **Én hendelse, én undersøkelse.** Før du starter: se etter andre aktive alerts i `rg-srelab-dev` og pull requests fra SRE Agent de siste 60 minuttene. Gjelder de samme hendelse, henvis til den eksisterende undersøkelsen eller PR-en, og ikke lag en ny fiks.
+- **Bruk en egen arbeidskopi per undersøkelse.** Lag en `git worktree` fra `origin/main` i en egen mappe. Ikke bytt branch med `git switch` eller `git checkout` i den felles kopien av repoet, fordi andre undersøkelser leser den samtidig.
 - **Bygg videre på det som finnes.** Utvid eksisterende moduler (for eksempel `infra/modules/alerts.bicep`) i stedet for å lage nye filer med samme formål.
 - **Ikke innfør nye påkrevde variabler eller hemmeligheter** uten å si det tydelig i PR-beskrivelsen. Eksisterende GitHub-variabler er dokumentert i README.
 - **Navngi brancher** `sre-agent/<kort-beskrivelse>`.
