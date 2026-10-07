@@ -113,7 +113,6 @@ def index():
 
 
 @app.get("/health")
-@app.get("/healthz")
 def health():
     """Liveness: prosessen lever. Sjekker ikke avhengigheter."""
     return {"status": "ok"}
