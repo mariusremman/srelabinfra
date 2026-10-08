@@ -130,6 +130,7 @@ var logAlerts = [
     // Skannere sender ofte ufullstendige forespørsler eller lukker umiddelbart. Behold 499 som varer minst ett sekund,
     // slik at ekte timeout-mønstre fra en treg avhengighet fortsatt varsles.
     description: 'Over 2 % av støttet trafikk gjennom Application Gateway feiler (5xx, eller 499 etter minst ett sekund). Baseline: 0 %.'
+    severity: 1
     // Multiline Bicep strings are literal, so replace stable placeholders with the deployed FQDNs.
     query: replace(
       replace(
