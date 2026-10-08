@@ -128,6 +128,8 @@ module alerts 'modules/alerts.bicep' = {
     containerAppId: containerApps.outputs.appId
     postgresId: postgres.outputs.id
     appInsightsId: monitoring.outputs.appInsightsId
+    appGatewayFqdn: appGateway.outputs.fqdn
+    containerAppFqdn: containerApps.outputs.appFqdn
     availabilityUrl: 'http://${appGateway.outputs.fqdn}/ready'
     alertEmail: alertEmail
   }
