@@ -131,13 +131,22 @@ var logAlerts = [
     // slik at ekte timeout-mønstre fra en treg avhengighet fortsatt varsles.
     description: 'Over 2 % av støttet trafikk gjennom Application Gateway feiler (5xx, eller 499 etter minst ett sekund). Baseline: 0 %.'
     severity: 1
-    query: '''
+    // Multiline Bicep strings are literal, so replace stable placeholders with the deployed FQDNs.
+    query: replace(
+      replace(
+        '''
 AGWAccessLogs
-| where Host in ('${appGatewayFqdn}', '${containerAppFqdn}')
+| where Host in ('__APPGW_FQDN__', '__CONTAINER_APP_FQDN__')
 | summarize requests = count(), errors = countif(HttpStatus >= 500 or (HttpStatus == 499 and TimeTaken >= 1))
 | extend errorPct = 100.0 * errors / requests
 | where requests >= 5 and errorPct > 2
-'''
+''',
+        '__APPGW_FQDN__',
+        appGatewayFqdn
+      ),
+      '__CONTAINER_APP_FQDN__',
+      containerAppFqdn
+    )
   }
   {
     name: 'http-latency-p95'
